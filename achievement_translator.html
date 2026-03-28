@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Achievement Translator</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f4f0;
+    --marble1: #fafaf8;
+    --marble2: #ededea;
+    --border: rgba(0,0,0,0.08);
+    --border-strong: rgba(0,0,0,0.15);
+    --text: #1a1a1a;
+    --muted: #8a8a82;
+    --accent: #3a4a6b;
+    --ice: #dde6f0;
+    --success: #3a6b5a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse at 20% 0%, rgba(180,195,220,0.25) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 100%, rgba(200,210,225,0.2) 0%, transparent 50%);
+    color: var(--text);
+    font-family: 'Jost', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 72px 24px 64px;
+  }
+
+  .wrapper { width: 100%; max-width: 600px; }
+
+  .header { margin-bottom: 56px; text-align: center; }
+
+  .eyebrow {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(36px, 6vw, 52px);
+    font-weight: 300;
+    line-height: 1.15;
+    color: var(--text);
+  }
+
+  h1 em { font-style: italic; color: var(--accent); }
+
+  .sub {
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+    line-height: 1.7;
+  }
+
+  .divider { width: 40px; height: 1px; background: var(--border-strong); margin: 20px auto 0; }
+
+  .card {
+    background: var(--marble1);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 32px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03);
+  }
+
+  .field-label {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .cat-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 28px; }
+
+  .cat-btn {
+    font-family: 'Jost', sans-serif;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    padding: 6px 14px;
+    border-radius: 1px;
+    border: 1px solid var(--border-strong);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+
+  .cat-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+  .cat-btn:hover:not(.active) { color: var(--text); border-color: var(--text); }
+
+  textarea {
+    width: 100%;
+    background: var(--marble2);
+    border: 1px solid var(--border);
+    border-radius: 1px;
+    color: var(--text);
+    font-family: 'Jost', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    line-height: 1.8;
+    padding: 18px 20px;
+    resize: none;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+    min-height: 120px;
+    letter-spacing: 0.01em;
+  }
+
+  textarea:focus { border-color: var(--border-strong); background: white; }
+  textarea::placeholder { color: var(--muted); font-style: italic; }
+
+  .translate-btn {
+    width: 100%;
+    padding: 18px;
+    background: var(--accent);
+    border: none;
+    border-radius: 1px;
+    color: white;
+    font-family: 'Jost', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 12px;
+  }
+
+  .translate-btn:hover:not(:disabled) { background: #2a3855; box-shadow: 0 4px 20px rgba(58,74,107,0.2); }
+  .translate-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .output-card {
+    background: white;
+    border: 1px solid var(--ice);
+    border-radius: 2px;
+    padding: 32px;
+    margin-top: 4px;
+    display: none;
+    box-shadow: 0 2px 12px rgba(58,74,107,0.07);
+    position: relative;
+  }
+
+  .output-card.visible { display: block; animation: fadeUp 0.35s ease; }
+
+  .output-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 32px; right: 32px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--ice), transparent);
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .output-text {
+    font-family: 'Jost', sans-serif;
+    font-size: 14px;
+    font-weight: 300;
+    line-height: 1.9;
+    color: var(--text);
+    white-space: pre-wrap;
+    letter-spacing: 0.01em;
+  }
+
+  .output-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .action-btn {
+    font-family: 'Jost', sans-serif;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    border-radius: 1px;
+    border: 1px solid var(--border-strong);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .action-btn:hover { color: var(--text); border-color: var(--text); }
+  .action-btn.copied { color: var(--success); border-color: var(--success); }
+
+  .history-section { margin-top: 48px; }
+
+  .section-label {
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .history-item {
+    background: var(--marble1);
+    border: 1px solid var(--border);
+    border-radius: 1px;
+    padding: 18px 20px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .history-item:hover { background: white; border-color: var(--border-strong); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+
+  .history-content { flex: 1; min-width: 0; }
+
+  .history-raw {
+    font-size: 10px;
+    color: var(--muted);
+    margin-bottom: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-style: italic;
+  }
+
+  .history-polished {
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .history-copy-btn {
+    font-family: 'Jost', sans-serif;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    background: transparent;
+    padding: 5px 10px;
+    border-radius: 1px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+
+  .history-copy-btn:hover { color: var(--text); border-color: var(--text); }
+
+  .dots { display: inline-flex; gap: 5px; align-items: center; justify-content: center; }
+
+  .dots span {
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: white;
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+
+  .dots span:nth-child(2) { animation-delay: 0.2s; }
+  .dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes pulse {
+    0%, 80%, 100% { opacity: 0.25; transform: scale(0.75); }
+    40% { opacity: 1; transform: scale(1); }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <div class="eyebrow">Achievement Engine</div>
+    <h1>Raw input,<br><em>refined output.</em></h1>
+    <p class="sub">Type what you did. Get something college applications respect.</p>
+    <div class="divider"></div>
+  </div>
+
+  <div class="card">
+    <div class="field-label">Category</div>
+    <div class="cat-row">
+      <button class="cat-btn active" data-cat="auto">Auto</button>
+      <button class="cat-btn" data-cat="business">Business</button>
+      <button class="cat-btn" data-cat="tech">Tech / Dev</button>
+      <button class="cat-btn" data-cat="academic">Academic</button>
+      <button class="cat-btn" data-cat="financial">Financial</button>
+      <button class="cat-btn" data-cat="leadership">Leadership</button>
+    </div>
+    <div class="field-label">What you did</div>
+    <textarea id="rawInput" placeholder="sold some airpods, made like 80 bucks, spent 40 on them…" rows="4"></textarea>
+  </div>
+
+  <button class="translate-btn" id="translateBtn">
+    <span id="btnText">Translate</span>
+  </button>
+
+  <div class="output-card" id="outputCard">
+    <div class="output-text" id="outputText"></div>
+    <div class="output-actions">
+      <button class="action-btn" id="copyBtn">Copy</button>
+      <button class="action-btn" id="regenBtn">Regenerate</button>
+      <button class="action-btn" id="clearBtn">Clear</button>
+    </div>
+  </div>
+
+  <div class="history-section" id="historySection" style="display:none">
+    <div class="section-label">History</div>
+    <div id="historyList"></div>
+  </div>
+</div>
+
+<script>
+let selectedCategory = 'auto';
+let currentRaw = '';
+let history = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+document.getElementById('translateBtn').addEventListener('click', translate);
+document.getElementById('copyBtn').addEventListener('click', copyOutput);
+document.getElementById('regenBtn').addEventListener('click', regenerate);
+document.getElementById('clearBtn').addEventListener('click', clearAll);
+document.querySelectorAll('.cat-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedCategory = btn.dataset.cat;
+  });
+});
+});
+
+async function translate() {
+  const raw = document.getElementById('rawInput').value.trim();
+  if (!raw) return;
+  currentRaw = raw;
+
+  const btn = document.getElementById('translateBtn');
+  const btnText = document.getElementById('btnText');
+  btn.disabled = true;
+  btnText.innerHTML = '<span class="dots"><span></span><span></span><span></span></span>';
+  document.getElementById('outputCard').classList.remove('visible');
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        system: `You are an elite college application achievement writer. Transform casual descriptions of real accomplishments into powerful, professional bullet points for a brag sheet or college application.
+
+Rules:
+- Output 1–3 polished bullet points depending on content
+- Start each with a strong action verb (Founded, Generated, Engineered, Negotiated, Architected, etc.)
+- Include specific numbers and percentages wherever calculable (e.g. $80 profit on $40 spend = 100% ROI)
+- Factually grounded — never exaggerate beyond what is implied
+- No "I" — no fluff words like "passionate" or "dedicated"
+- Category hint: ${selectedCategory}
+- Output ONLY the bullet points, nothing else`,
+        messages: [{ role: "user", content: raw }]
+      })
+    });
+
+    const data = await res.json();
+    const result = data.content?.map(c => c.text || '').join('') || 'Something went wrong.';
+    document.getElementById('outputText').textContent = result;
+    document.getElementById('outputCard').classList.add('visible');
+    addToHistory(raw, result);
+  } catch {
+    document.getElementById('outputText').textContent = 'Connection error — try again.';
+    document.getElementById('outputCard').classList.add('visible');
+  }
+
+  btn.disabled = false;
+  btnText.textContent = 'Translate';
+}
+
+async function regenerate() {
+  if (!currentRaw) return;
+  document.getElementById('rawInput').value = currentRaw;
+  await translate();
+}
+
+function copyOutput() {
+  navigator.clipboard.writeText(document.getElementById('outputText').textContent).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = 'Copied';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function clearAll() {
+  document.getElementById('rawInput').value = '';
+  document.getElementById('outputCard').classList.remove('visible');
+  currentRaw = '';
+}
+
+function addToHistory(raw, polished) {
+  history.unshift({ raw, polished });
+  document.getElementById('historySection').style.display = 'block';
+  document.getElementById('historyList').innerHTML = history.map((item, i) => `
+    <div class="history-item" data-index="${i}">
+      <div class="history-content">
+        <div class="history-raw">${item.raw.substring(0, 70)}${item.raw.length > 70 ? '…' : ''}</div>
+        <div class="history-polished">${item.polished}</div>
+      </div>
+      <button class="history-copy-btn" data-index="${i}">Copy</button>
+    </div>
+  `).join('');
+  document.getElementById('historyList').addEventListener('click', e => {
+    const copyBtn = e.target.closest('.history-copy-btn');
+    const item = e.target.closest('.history-item');
+    if (copyBtn) {
+      e.stopPropagation();
+      navigator.clipboard.writeText(history[+copyBtn.dataset.index].polished);
+    } else if (item) {
+      loadHistory(+item.dataset.index);
+    }
+  });
+}
+
+function loadHistory(i) {
+  document.getElementById('rawInput').value = history[i].raw;
+  document.getElementById('outputText').textContent = history[i].polished;
+  document.getElementById('outputCard').classList.add('visible');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
